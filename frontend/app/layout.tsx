@@ -4,7 +4,6 @@ import "./globals.css"
 import type { ReactNode } from "react"
 
 import { ThemeProvider } from "next-themes"
-import { Header } from "@/components/header"
 import { Providers } from "@/components/providers"
 import { cn } from "@/lib/utils"
 
@@ -28,6 +27,9 @@ export const metadata: Metadata = {
   description:
     "Course-grounded AI study platform for students to organize lecture slides, handouts, and notes, and actively study through grounded AI tutors and cited flashcards.",
   applicationName: "StudySync",
+  appleWebApp: {
+    title: "StudySync",
+  },
 }
 
 export default function RootLayout({
@@ -53,8 +55,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
-            <Header />
-
             {children}
           </Providers>
         </ThemeProvider>

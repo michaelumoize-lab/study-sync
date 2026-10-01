@@ -10,8 +10,16 @@
  */
 
 function getBackendBaseUrl(): string {
-  const url = process.env.BACKEND_URL || process.env.INTERNAL_BACKEND_URL || "http://localhost:8000";
-  return url.endsWith("/") ? url : `${url}/`;
+  const configuredUrl = process.env.BACKEND_URL || process.env.INTERNAL_BACKEND_URL;
+  if (!configuredUrl) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "BACKEND_URL or INTERNAL_BACKEND_URL must be configured in production."
+      );
+    }
+    return "http://localhost:8000/";
+  }
+  return configuredUrl.endsWith("/") ? configuredUrl : `${configuredUrl}/`;
 }
 
 /**
