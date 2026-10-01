@@ -1,0 +1,24 @@
+[project]
+name = "studysync-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Michael Umoize", email = "michaelumoize@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "boto3>=1.43.106",
+    "fastapi>=0.142.2",
+    "google-genai>=2.26.0",
+    "httpx>=0.28.1",
+    "pdfplumber>=0.11.10",
+    "pgvector>=0.5.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pypdf>=6.19.0",
+    "python-dotenv>=1.2.3",
+    "uvicorn[standard]>=0.54.0",
+]
+
