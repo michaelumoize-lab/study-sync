@@ -9,7 +9,7 @@ import { Logo } from "./logo";
 export async function Header() {
   const queryClient = getQueryClient()
 
-  await getServerSession();
+  const session = await getServerSession();
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
@@ -21,6 +21,11 @@ export async function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">
+            {session && (
+              <Link href="/dashboard" className="text-foreground font-semibold transition-colors hover:text-primary">
+                Dashboard
+              </Link>
+            )}
             <Link href="/#features" className="transition-colors hover:text-foreground">
               Features
             </Link>
@@ -39,6 +44,14 @@ export async function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {session && (
+              <Link
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+              >
+                Dashboard
+              </Link>
+            )}
             <UserButton size="icon" />
           </div>
         </div>

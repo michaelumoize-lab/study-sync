@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   description:
     "Course-grounded AI study platform for students to organize lecture slides, handouts, and notes, and actively study through grounded AI tutors and cited flashcards.",
   applicationName: "StudySync",
+  appleWebApp: {
+    title: "StudySync",
+  },
 }
 
 export default function RootLayout({

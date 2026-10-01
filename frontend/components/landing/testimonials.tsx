@@ -107,7 +107,10 @@ function ReviewCard({
   return (
     <figure
       aria-hidden={duplicate || undefined}
-      className="relative rounded-2xl border bg-card/80 p-6 shadow-[0_10px_40px_-24px_var(--glow)] before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-primary/50 before:to-transparent"
+      className={cn(
+        "relative rounded-2xl border bg-card/80 p-6 shadow-[0_10px_40px_-24px_var(--glow)] before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-primary/50 before:to-transparent",
+        duplicate && "motion-reduce:hidden"
+      )}
     >
       <Stars />
       <blockquote className="mt-4 text-[0.9375rem] leading-relaxed text-foreground/90">
@@ -168,7 +171,7 @@ export function Testimonials() {
       </div>
 
       <div className="group/reviews">
-        <div className="relative flex max-h-[42rem] gap-6 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,#000_15%,#000_85%,transparent)]">
+        <div className="relative flex max-h-[42rem] gap-6 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,#000_15%,#000_85%,transparent)] motion-reduce:max-h-none motion-reduce:overflow-visible motion-reduce:[mask-image:none]">
           <ReviewColumn items={studentReviews.slice(0, 3)} className="[--duration:34s]" />
           <ReviewColumn
             items={studentReviews.slice(3, 6)}

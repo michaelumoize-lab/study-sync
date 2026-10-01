@@ -1,26 +1,35 @@
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query"
-import Link from "next/link"
-import { redirect } from "next/navigation"
+import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/get-session";
+import { getCoursesForUser } from "@/data/courses";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { CourseGrid } from "@/components/dashboard/course-grid";
+import type { Metadata } from "next";
 
-import { getQueryClient } from "@/lib/query-client"
+export const metadata: Metadata = {
+  title: "Course Dashboard",
+  description:
+    "Manage your courses, view uploaded lecture slides, review flashcards, and practice with grounded quizzes.",
+};
 
-export default async function Dashboard() {
-  const queryClient = getQueryClient()
-
+export default async function DashboardPage() {
   const session = await getServerSession();
 
-  if (!session) {
-    redirect("/auth/sign-in?redirectTo=/dashboard")
+  if (!session?.user?.id) {
+    redirect("/auth/sign-in?redirectTo=/dashboard");
   }
 
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="flex flex-col items-center my-auto">
-        <h1 className="text-2xl">Hello, {session.user.email}</h1>
+  // Fetch courses and metrics via Data Access Layer
+  const courses = await getCoursesForUser(session.user.id);
 
-        <Link href="/auth/sign-out">Sign Out</Link>
-      </div>
-    </HydrationBoundary>
-  )
+  return (
+    <main className="container mx-auto max-w-6xl px-4 py-8 sm:px-6 flex-1">
+      <DashboardHeader
+        user={session.user}
+        courseCount={courses.length}
+        maxCourses={5}
+      />
+
+      <CourseGrid courses={courses} />
+    </main>
+  );
 }

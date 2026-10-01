@@ -105,36 +105,37 @@ export function FeaturesBento() {
 
           {/* Interactive Flashcard UI */}
           <div className="mt-6">
-            <div
+            <button
+              type="button"
               onClick={() => setCardFlipped(!cardFlipped)}
-              className="group cursor-pointer rounded-xl border border-primary/30 bg-background/80 p-4 transition-all duration-300 hover:border-primary shadow-sm"
+              className="w-full text-left group cursor-pointer rounded-xl border border-primary/30 bg-background/80 p-4 transition-all duration-300 hover:border-primary shadow-sm"
             >
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground border-b border-border/40 pb-2">
+              <span className="flex items-center justify-between text-[11px] text-muted-foreground border-b border-border/40 pb-2">
                 <span className="font-mono text-primary font-medium">Card 4 of 10</span>
                 <span className="flex items-center gap-1 text-[10px] uppercase font-semibold text-primary">
                   <RotateCw className="size-3 transition-transform group-hover:rotate-180 duration-500" />
                   Click to Flip
                 </span>
-              </div>
+              </span>
 
-              <div className="py-4 min-h-[90px] flex items-center justify-center text-center">
+              <span className="py-4 min-h-[90px] flex items-center justify-center text-center">
                 {!cardFlipped ? (
-                  <p className="text-xs sm:text-sm font-medium text-foreground">
+                  <span className="block text-xs sm:text-sm font-medium text-foreground">
                     What primary factor causes Translation Lookaside Buffer (TLB) thrashing?
-                  </p>
+                  </span>
                 ) : (
-                  <p className="text-xs sm:text-sm text-primary font-medium">
+                  <span className="block text-xs sm:text-sm text-primary font-medium">
                     When the working set of virtual pages exceeds the number of entries in the TLB.
-                  </p>
+                  </span>
                 )}
-              </div>
+              </span>
 
-              <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-border/40 text-center text-[10px] font-mono">
+              <span className="grid grid-cols-3 gap-1.5 pt-2 border-t border-border/40 text-center text-[10px] font-mono">
                 <span className="rounded bg-destructive/15 text-destructive font-medium py-1">Hard</span>
                 <span className="rounded bg-secondary text-foreground font-medium py-1">Medium</span>
                 <span className="rounded bg-primary/20 text-primary font-semibold py-1">Easy</span>
-              </div>
-            </div>
+              </span>
+            </button>
 
             {/* Deck Progress Bar */}
             <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
