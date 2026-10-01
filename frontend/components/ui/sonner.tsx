@@ -38,7 +38,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast:
+            "group toast group-[.toaster]:bg-popover group-[.toaster]:text-popover-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg group-[.toaster]:rounded-lg group-[.toaster]:font-sans",
+          title: "group-[.toast]:font-medium group-[.toast]:text-sm",
+          description: "group-[.toast]:text-muted-foreground group-[.toast]:text-xs",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:font-medium group-[.toast]:text-xs group-[.toast]:rounded-md",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:font-medium group-[.toast]:text-xs group-[.toast]:rounded-md",
+          closeButton:
+            "group-[.toast]:bg-background group-[.toast]:text-muted-foreground hover:group-[.toast]:text-foreground group-[.toast]:border-border",
         },
       }}
       {...props}
@@ -47,3 +56,4 @@ const Toaster = ({ ...props }: ToasterProps) => {
 }
 
 export { Toaster }
+export { toast } from "sonner"

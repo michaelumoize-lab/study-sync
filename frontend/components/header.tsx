@@ -13,17 +13,36 @@ export async function Header() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <header className="sticky top-0 z-10 bg-background border-b">
-        <div className="py-3 px-4 md:px-6 mx-auto justify-between flex items-center">
+      <header className="sticky top-0 z-30 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex h-18 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5 no-underline">
             <Logo />
-
-            <h1 className="text-base">BETTER-AUTH. UI</h1>
+            <span className="text-base font-semibold tracking-tight text-foreground">StudySync</span>
           </Link>
 
-          <UserButton size="icon" />
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-muted-foreground">
+            <Link href="/#features" className="transition-colors hover:text-foreground">
+              Features
+            </Link>
+            <Link href="/#tutor" className="transition-colors hover:text-foreground">
+              AI Tutor
+            </Link>
+            <Link href="/#how-it-works" className="transition-colors hover:text-foreground">
+              How It Works
+            </Link>
+            <Link href="/#reviews" className="transition-colors hover:text-foreground">
+              Reviews
+            </Link>
+            <Link href="/#quotas" className="transition-colors hover:text-foreground">
+              Free Quotas
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <UserButton size="icon" />
+          </div>
         </div>
       </header>
     </HydrationBoundary>
   )
-}
+}
