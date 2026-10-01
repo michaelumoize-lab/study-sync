@@ -4,7 +4,6 @@ import "./globals.css"
 import type { ReactNode } from "react"
 
 import { ThemeProvider } from "next-themes"
-import { Header } from "@/components/header"
 import { Providers } from "@/components/providers"
 import { cn } from "@/lib/utils"
 
@@ -56,8 +55,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
-            <Header />
-
             {children}
           </Providers>
         </ThemeProvider>

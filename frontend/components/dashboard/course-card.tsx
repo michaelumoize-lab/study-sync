@@ -120,7 +120,7 @@ export function CourseCard({ course }: CourseCardProps) {
                 <FileText className="size-3.5 text-blue-400" />
                 {course.stats.documentCount}
               </span>
-              <span className="text-[10px] text-muted-foreground">PDF Docs</span>
+              <span className="text-[10px] text-muted-foreground">documents</span>
             </div>
 
             <div className="flex flex-col items-center justify-center rounded-lg bg-muted/40 p-2 transition-colors hover:bg-muted/70">
@@ -128,7 +128,7 @@ export function CourseCard({ course }: CourseCardProps) {
                 <Layers className="size-3.5 text-purple-400" />
                 {course.stats.deckCount}
               </span>
-              <span className="text-[10px] text-muted-foreground">Decks</span>
+              <span className="text-[10px] text-muted-foreground">decks</span>
             </div>
 
             <div className="flex flex-col items-center justify-center rounded-lg bg-muted/40 p-2 transition-colors hover:bg-muted/70">
@@ -136,21 +136,21 @@ export function CourseCard({ course }: CourseCardProps) {
                 <HelpCircle className="size-3.5 text-emerald-400" />
                 {course.stats.quizCount}
               </span>
-              <span className="text-[10px] text-muted-foreground">Quizzes</span>
+              <span className="text-[10px] text-muted-foreground">quizzes</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1 text-[11px]">
               <Clock className="size-3" />
-              {formattedDate}
+              Last active {formattedDate}
             </span>
 
             <Link
               href={`/courses/${course.id}`}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
             >
-              Study Now
+              Open Course
               <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>

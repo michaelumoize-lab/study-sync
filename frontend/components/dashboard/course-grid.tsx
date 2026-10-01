@@ -2,16 +2,18 @@
 
 import { useState, useMemo } from "react";
 import { CourseCard } from "./course-card";
-import { EmptyCourses } from "./empty-courses";
+import { CreateCourseDialog } from "./create-course-dialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { CourseWithStats } from "@/types/course";
-import { Search, BookOpen } from "lucide-react";
+import { Search, BookOpen, Plus } from "lucide-react";
 
 interface CourseGridProps {
   courses: CourseWithStats[];
+  maxCourses?: number;
 }
 
-export function CourseGrid({ courses }: CourseGridProps) {
+export function CourseGrid({ courses, maxCourses = 5 }: CourseGridProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredCourses = useMemo(() => {
@@ -24,35 +26,55 @@ export function CourseGrid({ courses }: CourseGridProps) {
     );
   }, [courses, searchQuery]);
 
-  if (courses.length === 0) {
-    return <EmptyCourses courseCount={0} />;
-  }
+  const isAtQuota = courses.length >= maxCourses;
 
   return (
-    <div className="space-y-6">
-      {/* Search Filter Bar (if 2 or more courses exist) */}
-      {courses.length > 1 && (
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Filter courses by title or subject..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9.5 pl-9 text-xs sm:text-sm bg-background/50 rounded-xl"
-            />
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            Showing{" "}
-            <span className="font-semibold text-foreground">
-              {filteredCourses.length}
-            </span>{" "}
-            of {courses.length} courses
-          </div>
+    <section id="courses" className="mb-14 sm:mb-16 space-y-6" aria-labelledby="your-courses-heading">
+      {/* Section Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <h2
+            id="your-courses-heading"
+            className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+          >
+            Your Courses
+          </h2>
+          <span className="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+            {courses.length}
+          </span>
         </div>
-      )}
+
+        <div className="flex items-center gap-3">
+          {courses.length > 2 && (
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 rounded-xl bg-background/50 pl-8.5 text-xs"
+              />
+            </div>
+          )}
+
+          <CreateCourseDialog
+            courseCount={courses.length}
+            maxCourses={maxCourses}
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isAtQuota}
+                className="h-9 gap-1.5 rounded-xl border-border/70 text-xs font-medium hover:bg-muted"
+              >
+                <Plus className="size-3.5" />
+                <span>Create Course</span>
+              </Button>
+            }
+          />
+        </div>
+      </div>
 
       {/* Grid of Courses */}
       {filteredCourses.length > 0 ? (
@@ -78,6 +100,6 @@ export function CourseGrid({ courses }: CourseGridProps) {
           </button>
         </div>
       )}
-    </div>
+    </section>
   );
 }

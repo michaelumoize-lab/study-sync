@@ -1,3 +1,4 @@
+import { Header } from "@/components/header"
 import { LandingHero } from "@/components/landing/landing-hero"
 import { InteractivePreview } from "@/components/landing/interactive-preview"
 import { FeaturesBento } from "@/components/landing/features-bento"
@@ -12,6 +13,7 @@ import { SiteFooter } from "@/components/landing/site-footer"
 export default function Home() {
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-x-clip bg-background">
+      <Header />
       <main className="flex-1">
         {/* 1. Atmospheric Hero with hero-globe ambient scene */}
         <LandingHero />

@@ -99,8 +99,8 @@ export function CreateCourseDialog({
             disabled={isAtQuota}
             className="group relative inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
           >
-            <Plus className="size-4 transition-transform group-hover:rotate-90" />
-            <span>New Course</span>
+            <Plus className="size-4" />
+            <span>Create Course</span>
           </Button>
         )}
       </DialogTrigger>
