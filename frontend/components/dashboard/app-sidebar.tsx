@@ -108,7 +108,7 @@ export function AppSidebar({ user, className, ...props }: AppSidebarProps) {
                 isActive={isCoursesActive && !isDashboardActive}
                 tooltip="Courses"
               >
-                <Link href="/dashboard#courses" onClick={handleNavClick}>
+                <Link href="/courses" onClick={handleNavClick}>
                   <BookOpen className="size-4" />
                   <span>Courses</span>
                 </Link>

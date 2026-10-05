@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { courses } from "@/db/schema";
 import { count, eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getUniqueCourseSlug } from "@/lib/slug";
 import {
   createCourseSchema,
   updateCourseSchema,
@@ -17,11 +18,11 @@ const MAX_FREE_COURSES = 5;
 
 /**
  * Server Action: Create a new course workspace for the authenticated student.
- * Enforces schema validation and free-tier course limits.
+ * Enforces schema validation, free-tier course limits, and generates human-readable unique slug.
  */
 export async function createCourse(
   input: CreateCourseInput
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; slug: string }>> {
   const session = await getServerSession();
 
   if (!session?.user?.id) {
@@ -56,23 +57,31 @@ export async function createCourse(
       };
     }
 
-    // 3. Database Insertion
+    // 3. Generate human-readable unique slug for this user
+    const slug = await getUniqueCourseSlug(
+      parsed.data.title.trim(),
+      session.user.id
+    );
+
+    // 4. Database Insertion
     const [inserted] = await db
       .insert(courses)
       .values({
         userId: session.user.id,
         title: parsed.data.title.trim(),
+        slug,
         description: parsed.data.description?.trim() || null,
         color: parsed.data.color,
       })
-      .returning({ id: courses.id });
+      .returning({ id: courses.id, slug: courses.slug });
 
-    // 4. Cache Revalidation
+    // 5. Cache Revalidation
     revalidatePath("/dashboard");
+    revalidatePath("/courses");
 
     return {
       success: true,
-      data: { id: inserted.id },
+      data: { id: inserted.id, slug: inserted.slug },
     };
   } catch (error) {
     console.error("[createCourse] Database error:", error);
@@ -85,11 +94,11 @@ export async function createCourse(
 
 /**
  * Server Action: Update course title, description, or accent color.
- * Enforces user ownership.
+ * Enforces user ownership and updates slug if title is modified.
  */
 export async function updateCourse(
   input: UpdateCourseInput
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; slug: string }>> {
   const session = await getServerSession();
 
   if (!session?.user?.id) {
@@ -110,11 +119,35 @@ export async function updateCourse(
   }
 
   try {
-    // 2. Ownership check and update
+    // 2. Check current course
+    const existing = await db.query.courses.findFirst({
+      where: and(eq(courses.id, parsed.data.id), eq(courses.userId, session.user.id)),
+      columns: { id: true, title: true, slug: true },
+    });
+
+    if (!existing) {
+      return {
+        success: false,
+        error: "Course not found or you do not have permission to edit it.",
+      };
+    }
+
+    // 3. If title changed, generate updated unique slug
+    let updatedSlug = existing.slug;
+    if (parsed.data.title.trim() !== existing.title) {
+      updatedSlug = await getUniqueCourseSlug(
+        parsed.data.title.trim(),
+        session.user.id,
+        parsed.data.id
+      );
+    }
+
+    // 4. Ownership check and update
     const [updated] = await db
       .update(courses)
       .set({
         title: parsed.data.title.trim(),
+        slug: updatedSlug,
         description: parsed.data.description?.trim() || null,
         color: parsed.data.color,
         updatedAt: new Date(),
@@ -122,21 +155,18 @@ export async function updateCourse(
       .where(
         and(eq(courses.id, parsed.data.id), eq(courses.userId, session.user.id))
       )
-      .returning({ id: courses.id });
-
-    if (!updated) {
-      return {
-        success: false,
-        error: "Course not found or you do not have permission to edit it.",
-      };
-    }
+      .returning({ id: courses.id, slug: courses.slug });
 
     revalidatePath("/dashboard");
-    revalidatePath(`/courses/${parsed.data.id}`);
+    revalidatePath("/courses");
+    revalidatePath(`/courses/${existing.slug}`);
+    if (updated.slug !== existing.slug) {
+      revalidatePath(`/courses/${updated.slug}`);
+    }
 
     return {
       success: true,
-      data: { id: updated.id },
+      data: { id: updated.id, slug: updated.slug },
     };
   } catch (error) {
     console.error("[updateCourse] Database error:", error);
@@ -176,6 +206,7 @@ export async function deleteCourse(
     }
 
     revalidatePath("/dashboard");
+    revalidatePath("/courses");
 
     return {
       success: true,

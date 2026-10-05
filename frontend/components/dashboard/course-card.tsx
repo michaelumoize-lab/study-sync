@@ -51,7 +51,7 @@ export function CourseCard({ course }: CourseCardProps) {
         <div>
           <div className="flex items-start justify-between gap-3">
             <Link
-              href={`/courses/${course.id}`}
+              href={`/courses/${course.slug}`}
               className="flex-1 space-y-1 group/title"
             >
               <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ export function CourseCard({ course }: CourseCardProps) {
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem asChild>
                   <Link
-                    href={`/courses/${course.id}`}
+                    href={`/courses/${course.slug}`}
                     className="flex items-center gap-2"
                   >
                     <FolderOpen className="size-4 text-muted-foreground" />
@@ -147,7 +147,7 @@ export function CourseCard({ course }: CourseCardProps) {
             </span>
 
             <Link
-              href={`/courses/${course.id}`}
+              href={`/courses/${course.slug}`}
               className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
             >
               Open Course

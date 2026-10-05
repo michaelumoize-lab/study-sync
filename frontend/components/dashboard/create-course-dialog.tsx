@@ -83,8 +83,8 @@ export function CreateCourseDialog({
       resetForm();
       setOpen(false);
 
-      // Navigate to the newly created course workspace
-      router.push(`/courses/${result.data.id}`);
+      // Navigate to the newly created course workspace using human-readable slug
+      router.push(`/courses/${result.data.slug}`);
     });
   };
 
