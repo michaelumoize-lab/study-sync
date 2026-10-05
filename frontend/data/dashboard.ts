@@ -20,6 +20,7 @@ export interface DashboardActivityItem {
   title: string;
   courseId: string;
   courseTitle: string;
+  courseSlug: string;
   courseColor: string;
   timestamp: Date;
   detail: string;
@@ -29,6 +30,7 @@ export interface DashboardActivityItem {
 export interface ContinueStudyingData {
   courseId: string;
   courseTitle: string;
+  courseSlug: string;
   courseColor: string;
   activityTitle: string;
   activityType: ActivityType;
@@ -56,7 +58,7 @@ export const getRecentActivityForUser = cache(
         limit,
         with: {
           course: {
-            columns: { id: true, title: true, color: true },
+            columns: { id: true, title: true, color: true, slug: true },
           },
         },
       }),
@@ -66,7 +68,7 @@ export const getRecentActivityForUser = cache(
         limit,
         with: {
           course: {
-            columns: { id: true, title: true, color: true },
+            columns: { id: true, title: true, color: true, slug: true },
           },
         },
       }),
@@ -76,7 +78,7 @@ export const getRecentActivityForUser = cache(
         limit,
         with: {
           course: {
-            columns: { id: true, title: true, color: true },
+            columns: { id: true, title: true, color: true, slug: true },
           },
         },
       }),
@@ -89,7 +91,7 @@ export const getRecentActivityForUser = cache(
             columns: { id: true, title: true },
             with: {
               course: {
-                columns: { id: true, title: true, color: true },
+                columns: { id: true, title: true, color: true, slug: true },
               },
             },
           },
@@ -101,7 +103,7 @@ export const getRecentActivityForUser = cache(
         limit,
         with: {
           course: {
-            columns: { id: true, title: true, color: true },
+            columns: { id: true, title: true, color: true, slug: true },
           },
         },
       }),
@@ -118,10 +120,11 @@ export const getRecentActivityForUser = cache(
           title: doc.title,
           courseId: doc.courseId,
           courseTitle: doc.course.title,
+          courseSlug: doc.course.slug,
           courseColor: doc.course.color,
           timestamp: doc.createdAt,
           detail: doc.status === "READY" ? "Document ready to study" : "PDF document uploaded",
-          href: `/courses/${doc.courseId}`,
+          href: `/courses/${doc.course.slug}`,
         });
       }
     }
@@ -135,10 +138,11 @@ export const getRecentActivityForUser = cache(
           title: chat.title,
           courseId: chat.courseId,
           courseTitle: chat.course.title,
+          courseSlug: chat.course.slug,
           courseColor: chat.course.color,
           timestamp: chat.updatedAt,
           detail: "Chat conversation updated",
-          href: `/courses/${chat.courseId}`,
+          href: `/courses/${chat.course.slug}`,
         });
       }
     }
@@ -152,10 +156,11 @@ export const getRecentActivityForUser = cache(
           title: deck.title,
           courseId: deck.courseId,
           courseTitle: deck.course.title,
+          courseSlug: deck.course.slug,
           courseColor: deck.course.color,
           timestamp: deck.createdAt,
           detail: "Flashcard deck generated",
-          href: `/courses/${deck.courseId}`,
+          href: `/courses/${deck.course.slug}`,
         });
       }
     }
@@ -169,10 +174,11 @@ export const getRecentActivityForUser = cache(
           title: attempt.quiz.title,
           courseId: attempt.quiz.course.id,
           courseTitle: attempt.quiz.course.title,
+          courseSlug: attempt.quiz.course.slug,
           courseColor: attempt.quiz.course.color,
           timestamp: attempt.completedAt,
           detail: `Quiz completed — ${attempt.scorePercent}%`,
-          href: `/courses/${attempt.quiz.course.id}`,
+          href: `/courses/${attempt.quiz.course.slug}`,
         });
       }
     }
@@ -187,10 +193,11 @@ export const getRecentActivityForUser = cache(
           title: quiz.title,
           courseId: quiz.courseId,
           courseTitle: quiz.course.title,
+          courseSlug: quiz.course.slug,
           courseColor: quiz.course.color,
           timestamp: quiz.createdAt,
           detail: "Practice quiz created",
-          href: `/courses/${quiz.courseId}`,
+          href: `/courses/${quiz.course.slug}`,
         });
       }
     }
@@ -219,6 +226,7 @@ export const getDashboardData = cache(
       continueStudying = {
         courseId: top.courseId,
         courseTitle: top.courseTitle,
+        courseSlug: top.courseSlug,
         courseColor: top.courseColor,
         activityTitle: top.title,
         activityType: top.type,
@@ -231,11 +239,12 @@ export const getDashboardData = cache(
       continueStudying = {
         courseId: newestCourse.id,
         courseTitle: newestCourse.title,
+        courseSlug: newestCourse.slug,
         courseColor: newestCourse.color,
         activityTitle: "Upload lecture slides & study materials",
         activityType: "course",
         timestamp: newestCourse.updatedAt,
-        href: `/courses/${newestCourse.id}`,
+        href: `/courses/${newestCourse.slug}`,
         isInitialCourse: true,
       };
     }

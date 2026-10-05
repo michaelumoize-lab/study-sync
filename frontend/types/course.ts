@@ -57,6 +57,7 @@ export interface CourseWithStats {
   id: string;
   userId: string;
   title: string;
+  slug: string;
   description: string | null;
   color: string;
   createdAt: Date;

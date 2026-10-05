@@ -19,11 +19,13 @@ import { cn } from "@/lib/utils";
 
 interface RecentActivityProps {
   activities: DashboardActivityItem[];
+  firstCourseSlug?: string;
   firstCourseId?: string;
 }
 
 export function RecentActivity({
   activities,
+  firstCourseSlug,
   firstCourseId,
 }: RecentActivityProps) {
   const getActivityIcon = (type: DashboardActivityItem["type"]) => {
@@ -135,10 +137,10 @@ export function RecentActivity({
           <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
             Start by uploading study materials, slides, or syllabus notes to one of your courses.
           </p>
-          {firstCourseId && (
+          {(firstCourseSlug || firstCourseId) && (
             <div className="mt-5">
               <Button asChild size="sm" variant="outline" className="gap-2 rounded-xl text-xs font-semibold">
-                <Link href={`/courses/${firstCourseId}`}>
+                <Link href={`/courses/${firstCourseSlug || firstCourseId}`}>
                   <span>Open Your Course</span>
                   <ArrowRight className="size-3.5" />
                 </Link>

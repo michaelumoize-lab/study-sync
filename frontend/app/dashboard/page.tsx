@@ -48,7 +48,7 @@ export default async function DashboardPage() {
 
           <RecentActivity
             activities={recentActivity}
-            firstCourseId={courses[0]?.id}
+            firstCourseSlug={courses[0]?.slug}
           />
         </div>
       )}
