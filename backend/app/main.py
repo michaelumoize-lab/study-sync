@@ -24,9 +24,13 @@ app.add_middleware(
 api_key_header = APIKeyHeader(name="X-Internal-Secret", auto_error=False)
 
 def verify_internal_secret(api_key: str = Security(api_key_header)):
-    if settings.ENVIRONMENT == "production" and api_key != settings.INTERNAL_API_SECRET:
+    if settings.INTERNAL_API_SECRET and api_key != settings.INTERNAL_API_SECRET:
         raise HTTPException(status_code=403, detail="Unauthorized internal request")
     return True
+
+# Include routers
+from app.api.routes.ingestion import router as ingestion_router
+app.include_router(ingestion_router)
 
 @app.get("/health")
 def health_check():

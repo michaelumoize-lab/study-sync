@@ -15,6 +15,8 @@ export const getCoursesForUser = cache(
       orderBy: [desc(courses.updatedAt)],
       with: {
         documents: {
+          where: (docs, { and, ne }) =>
+            and(ne(docs.status, "FAILED"), ne(docs.status, "UPLOADING")),
           columns: {
             id: true,
           },
@@ -66,6 +68,8 @@ export const getCourseById = cache(
         and(eq(table.id, courseId), eq(table.userId, userId)),
       with: {
         documents: {
+          where: (docs, { and, ne }) =>
+            and(ne(docs.status, "FAILED"), ne(docs.status, "UPLOADING")),
           columns: { id: true },
         },
         flashcardDecks: {
@@ -111,6 +115,8 @@ export const getCourseBySlug = cache(
         and(eq(table.slug, slug), eq(table.userId, userId)),
       with: {
         documents: {
+          where: (docs, { and, ne }) =>
+            and(ne(docs.status, "FAILED"), ne(docs.status, "UPLOADING")),
           columns: { id: true },
         },
         flashcardDecks: {
