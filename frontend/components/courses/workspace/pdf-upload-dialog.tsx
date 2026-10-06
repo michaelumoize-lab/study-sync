@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -12,7 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { createDocumentAction } from "@/actions/documents";
+import {
+  createDocumentUploadSessionAction,
+  confirmDocumentUploadAction,
+  cancelDocumentUploadSessionAction,
+} from "@/actions/documents";
 import { formatFileSize } from "@/types/document";
 import {
   Upload,
@@ -23,6 +27,7 @@ import {
   X,
   FileUp,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +56,9 @@ export function PdfUploadDialog({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const resetState = useCallback(() => {
     setState("IDLE");
@@ -59,18 +66,35 @@ export function PdfUploadDialog({
     setUploadProgress(0);
     setErrorMessage(null);
     setIsDragOver(false);
+    setActiveDocId(null);
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }, []);
 
+  // Clean up polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
   const handleOpenChange = (newOpen: boolean) => {
-    // Prevent accidental close during active upload or processing
-    if (!newOpen && (state === "UPLOADING" || state === "PROCESSING")) {
+    // Only lock modal during active raw bytes upload to prevent corrupted uploads.
+    // User CAN close during PROCESSING (background continuation).
+    if (!newOpen && state === "UPLOADING") {
+      toast.info("Upload in progress. Please wait a moment.");
       return;
     }
+
     setOpen(newOpen);
-    if (!newOpen) {
+    if (!newOpen && state !== "PROCESSING") {
       resetState();
     }
   };
@@ -138,55 +162,106 @@ export function PdfUploadDialog({
     }
   };
 
-  // Perform upload simulation and persistence
+  // Start direct Cloudflare R2 upload followed by FastAPI background processing
   const startUpload = async () => {
     if (!selectedFile) return;
 
     setState("UPLOADING");
-    setUploadProgress(10);
+    setUploadProgress(0);
+    setErrorMessage(null);
 
-    // Smooth upload progress animation
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + Math.floor(Math.random() * 15) + 10;
-      });
-    }, 150);
+    let createdDocId: string | null = null;
 
     try {
-      // Simulate network transmission delay
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      setState("PROCESSING");
-      // Simulate indexing/chunking step
-      await new Promise((resolve) => setTimeout(resolve, 900));
-
-      // Clean course title from file name (strip .pdf extension)
-      const cleanTitle = selectedFile.name.replace(/\.pdf$/i, "").trim();
-
-      // Persist to Neon DB via server action
-      const result = await createDocumentAction({
+      // 1. Obtain presigned PUT URL and registered documentId
+      const sessionResult = await createDocumentUploadSessionAction({
         courseId,
         courseSlug,
-        title: cleanTitle,
+        filename: selectedFile.name,
         fileSizeBytes: selectedFile.size,
-        status: "READY",
       });
 
-      if (!result.success) {
-        throw new Error(result.error);
+      if (!sessionResult.success) {
+        throw new Error(sessionResult.error);
       }
 
-      setState("READY");
-      toast.success(`"${cleanTitle}" uploaded and indexed successfully!`);
-      onSuccess?.();
+      const { documentId, uploadUrl } = sessionResult.data;
+      createdDocId = documentId;
+      setActiveDocId(documentId);
+
+      // 2. Direct upload to Cloudflare R2 with accurate XHR progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadUrl, true);
+        xhr.setRequestHeader("Content-Type", selectedFile.type || "application/pdf");
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percent);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(
+              new Error(
+                `Upload failed with status ${xhr.status}. Please check permissions or try again.`
+              )
+            );
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(
+            new Error(
+              "Network connection failed during upload. Please check storage permissions."
+            )
+          );
+        };
+
+        xhr.send(selectedFile);
+      });
+
+      setUploadProgress(100);
+      setState("PROCESSING");
+
+      // 3. Confirm upload & dispatch background ingestion to FastAPI
+      const confirmResult = await confirmDocumentUploadAction(documentId, courseSlug);
+      if (!confirmResult.success) {
+        throw new Error(confirmResult.error);
+      }
+
+      // 4. Poll status endpoint every 2 seconds until READY or FAILED
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/documents/${documentId}/status`);
+          if (!res.ok) return;
+          const data = await res.json();
+
+          if (data.status === "READY") {
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            setState("READY");
+            toast.success(`"${selectedFile.name.replace(/\.pdf$/i, "")}" indexed and ready!`);
+            onSuccess?.();
+          } else if (data.status === "FAILED") {
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            setState("ERROR");
+            const err = data.errorMessage || "Processing failed.";
+            setErrorMessage(err);
+            toast.error(err);
+          }
+        } catch (pollErr) {
+          console.warn("Polling status error:", pollErr);
+        }
+      }, 2000);
+
     } catch (err: unknown) {
-      clearInterval(progressInterval);
+      if (createdDocId) {
+        cancelDocumentUploadSessionAction(createdDocId).catch(console.error);
+      }
       const msg = err instanceof Error ? err.message : "Failed to upload document.";
       setErrorMessage(msg);
       setState("ERROR");
@@ -248,7 +323,7 @@ export function PdfUploadDialog({
               <span className="text-primary hover:underline">browse</span>
             </p>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Supports PDF documents up to 50 MB
+              Supports digital PDF documents up to 50 MB
             </p>
 
             <div className="mt-4 flex items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1 text-[11px] text-muted-foreground">
@@ -308,7 +383,7 @@ export function PdfUploadDialog({
           </div>
         )}
 
-        {/* State 3: UPLOADING - Progress bar */}
+        {/* State 3: UPLOADING - Real progress bar */}
         {state === "UPLOADING" && (
           <div className="space-y-4 py-6 text-center">
             <div className="flex size-12 mx-auto items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -317,7 +392,7 @@ export function PdfUploadDialog({
 
             <div className="space-y-1.5">
               <h4 className="text-sm font-semibold text-foreground">
-                Uploading document...
+                Uploading...
               </h4>
               <p className="text-xs text-muted-foreground">
                 {selectedFile?.name} ({uploadProgress}%)
@@ -330,7 +405,7 @@ export function PdfUploadDialog({
           </div>
         )}
 
-        {/* State 4: PROCESSING - Chunker & Embedder */}
+        {/* State 4: PROCESSING - Background extraction & embeddings */}
         {state === "PROCESSING" && (
           <div className="space-y-4 py-6 text-center">
             <div className="flex size-12 mx-auto items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
@@ -339,11 +414,26 @@ export function PdfUploadDialog({
 
             <div className="space-y-1.5">
               <h4 className="text-sm font-semibold text-foreground">
-                Processing & indexing content...
+                Extracting & indexing vectors...
               </h4>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                Parsing pages and building AI study index for your flashcards and tutor.
+                Parsing page boundaries and generating 768-dimensional embeddings for your course materials.
               </p>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground/80 italic pt-1">
+              You can safely close this dialog — indexing will continue in the background.
+            </p>
+
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen(false)}
+                className="rounded-xl text-xs"
+              >
+                Continue in Background
+              </Button>
             </div>
           </div>
         )}
@@ -360,7 +450,7 @@ export function PdfUploadDialog({
                 Document ready for studying!
               </h4>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                {selectedFile?.name} is ready. You can now generate flashcards, practice quizzes, or study with your AI Tutor.
+                {selectedFile?.name} has been chunked and vectorized. You can now use AI Tutor, flashcards, or practice quizzes.
               </p>
             </div>
 
@@ -393,21 +483,31 @@ export function PdfUploadDialog({
 
             <div className="space-y-1.5">
               <h4 className="text-sm font-semibold text-foreground">
-                Upload failed
+                Upload or processing failed
               </h4>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                {errorMessage || "An unexpected error occurred while uploading your document."}
+                {errorMessage || "An unexpected error occurred while processing your document."}
               </p>
             </div>
 
             <div className="flex items-center justify-center gap-2.5 pt-2">
+              {selectedFile ? (
+                <Button
+                  size="sm"
+                  onClick={startUpload}
+                  className="gap-1.5 rounded-xl text-xs font-semibold"
+                >
+                  <RefreshCw className="size-3.5" />
+                  <span>Try Again</span>
+                </Button>
+              ) : null}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={resetState}
                 className="rounded-xl text-xs"
               >
-                Try Again
+                Choose Different File
               </Button>
               <Button
                 variant="ghost"
@@ -415,7 +515,7 @@ export function PdfUploadDialog({
                 onClick={() => setOpen(false)}
                 className="rounded-xl text-xs text-muted-foreground"
               >
-                Cancel
+                Close
               </Button>
             </div>
           </div>
