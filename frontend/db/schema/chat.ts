@@ -16,8 +16,15 @@ export const messageRoleEnum = pgEnum("message_role", [
   "system",
 ]);
 
+export const chatMessageStatusEnum = pgEnum("chat_message_status", [
+  "complete",
+  "stopped",
+  "error",
+]);
+
 export interface ChatCitation {
   index: number;
+  documentId: string;
   documentTitle: string;
   pageNumber: number;
   excerpt: string;
@@ -38,7 +45,10 @@ export const chatThreads = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [index("chat_threads_course_idx").on(table.courseId)]
+  (table) => [
+    index("chat_threads_course_idx").on(table.courseId),
+    index("chat_threads_user_updated_idx").on(table.userId, table.updatedAt),
+  ]
 );
 
 export const chatMessages = pgTable(
@@ -50,6 +60,8 @@ export const chatMessages = pgTable(
       .references(() => chatThreads.id, { onDelete: "cascade" }),
     role: messageRoleEnum("role").notNull(),
     content: text("content").notNull(),
+    status: chatMessageStatusEnum("status").default("complete").notNull(),
+    model: text("model"),
     citations: jsonb("citations").$type<ChatCitation[]>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
