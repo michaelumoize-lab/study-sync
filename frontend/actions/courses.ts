@@ -16,6 +16,29 @@ import type { ActionResult } from "@/types/action-result";
 
 const MAX_FREE_COURSES = 5;
 
+interface DbErrorLike {
+  code?: string;
+  constraint?: string;
+  message?: string;
+  detail?: string;
+  cause?: DbErrorLike;
+}
+
+function isSlugUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const err = error as DbErrorLike;
+  const code = err.code ?? err.cause?.code;
+  if (code !== "23505") return false;
+  const constraint = String(err.constraint ?? err.cause?.constraint ?? "");
+  const message = String(err.message ?? err.cause?.message ?? "");
+  const detail = String(err.detail ?? err.cause?.detail ?? "");
+  return (
+    constraint.includes("courses_user_slug_idx") ||
+    message.includes("courses_user_slug_idx") ||
+    detail.includes("courses_user_slug_idx")
+  );
+}
+
 /**
  * Server Action: Create a new course workspace for the authenticated student.
  * Enforces schema validation, free-tier course limits, and generates human-readable unique slug.
@@ -57,23 +80,45 @@ export async function createCourse(
       };
     }
 
-    // 3. Generate human-readable unique slug for this user
-    const slug = await getUniqueCourseSlug(
-      parsed.data.title.trim(),
-      session.user.id
-    );
+    const MAX_RETRIES = 3;
+    let inserted: { id: string; slug: string } | undefined;
 
-    // 4. Database Insertion
-    const [inserted] = await db
-      .insert(courses)
-      .values({
-        userId: session.user.id,
-        title: parsed.data.title.trim(),
-        slug,
-        description: parsed.data.description?.trim() || null,
-        color: parsed.data.color,
-      })
-      .returning({ id: courses.id, slug: courses.slug });
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        // 3. Generate human-readable unique slug for this user
+        const slug = await getUniqueCourseSlug(
+          parsed.data.title.trim(),
+          session.user.id
+        );
+
+        // 4. Database Insertion
+        const [row] = await db
+          .insert(courses)
+          .values({
+            userId: session.user.id,
+            title: parsed.data.title.trim(),
+            slug,
+            description: parsed.data.description?.trim() || null,
+            color: parsed.data.color,
+          })
+          .returning({ id: courses.id, slug: courses.slug });
+
+        inserted = row;
+        break;
+      } catch (err) {
+        if (isSlugUniqueViolation(err) && attempt < MAX_RETRIES - 1) {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!inserted) {
+      return {
+        success: false,
+        error: "An unexpected error occurred while creating the course. Please try again.",
+      };
+    }
 
     // 5. Cache Revalidation
     revalidatePath("/dashboard");
@@ -132,30 +177,52 @@ export async function updateCourse(
       };
     }
 
-    // 3. If title changed, generate updated unique slug
-    let updatedSlug = existing.slug;
-    if (parsed.data.title.trim() !== existing.title) {
-      updatedSlug = await getUniqueCourseSlug(
-        parsed.data.title.trim(),
-        session.user.id,
-        parsed.data.id
-      );
+    const MAX_RETRIES = 3;
+    let updated: { id: string; slug: string } | undefined;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        // 3. If title changed, generate updated unique slug
+        let updatedSlug = existing.slug;
+        if (parsed.data.title.trim() !== existing.title) {
+          updatedSlug = await getUniqueCourseSlug(
+            parsed.data.title.trim(),
+            session.user.id,
+            parsed.data.id
+          );
+        }
+
+        // 4. Ownership check and update
+        const [row] = await db
+          .update(courses)
+          .set({
+            title: parsed.data.title.trim(),
+            slug: updatedSlug,
+            description: parsed.data.description?.trim() || null,
+            color: parsed.data.color,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(eq(courses.id, parsed.data.id), eq(courses.userId, session.user.id))
+          )
+          .returning({ id: courses.id, slug: courses.slug });
+
+        updated = row;
+        break;
+      } catch (err) {
+        if (isSlugUniqueViolation(err) && attempt < MAX_RETRIES - 1) {
+          continue;
+        }
+        throw err;
+      }
     }
 
-    // 4. Ownership check and update
-    const [updated] = await db
-      .update(courses)
-      .set({
-        title: parsed.data.title.trim(),
-        slug: updatedSlug,
-        description: parsed.data.description?.trim() || null,
-        color: parsed.data.color,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(eq(courses.id, parsed.data.id), eq(courses.userId, session.user.id))
-      )
-      .returning({ id: courses.id, slug: courses.slug });
+    if (!updated) {
+      return {
+        success: false,
+        error: "Course not found or you do not have permission to edit it.",
+      };
+    }
 
     revalidatePath("/dashboard");
     revalidatePath("/courses");

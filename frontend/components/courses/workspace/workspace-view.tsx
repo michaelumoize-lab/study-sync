@@ -109,9 +109,10 @@ export function WorkspaceView({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {/* Tile 1: AI Tutor */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveTab("chat")}
-                className="group cursor-pointer rounded-2xl border border-border/70 bg-card/50 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/40 hover:bg-card shadow-xs"
+                className="group cursor-pointer rounded-2xl border border-border/70 bg-card/50 p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/40 hover:bg-card shadow-xs"
               >
                 <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 mb-3 transition-transform group-hover:scale-105">
                   <BrainCircuit className="size-5" />
@@ -123,12 +124,13 @@ export function WorkspaceView({
                 <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                   Ask questions about your lectures, solve problem sets, and get step-by-step explanations.
                 </p>
-              </div>
+              </button>
 
               {/* Tile 2: Flashcards */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveTab("flashcards")}
-                className="group cursor-pointer rounded-2xl border border-border/70 bg-card/50 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-500/40 hover:bg-card shadow-xs"
+                className="group cursor-pointer rounded-2xl border border-border/70 bg-card/50 p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-500/40 hover:bg-card shadow-xs"
               >
                 <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500 mb-3 transition-transform group-hover:scale-105">
                   <Layers className="size-5" />
@@ -140,12 +142,13 @@ export function WorkspaceView({
                 <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                   Master key terminology and definitions using spaced-repetition active recall decks.
                 </p>
-              </div>
+              </button>
 
               {/* Tile 3: Quizzes */}
-              <div
+              <button
+                type="button"
                 onClick={() => setActiveTab("quizzes")}
-                className="group cursor-pointer rounded-2xl border border-border/70 bg-card/50 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500/40 hover:bg-card shadow-xs"
+                className="group cursor-pointer rounded-2xl border border-border/70 bg-card/50 p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500/40 hover:bg-card shadow-xs"
               >
                 <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 mb-3 transition-transform group-hover:scale-105">
                   <GraduationCap className="size-5" />
@@ -157,7 +160,7 @@ export function WorkspaceView({
                 <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                   Simulate timed midterm and final exam questions generated from your uploaded materials.
                 </p>
-              </div>
+              </button>
             </div>
           </div>
 

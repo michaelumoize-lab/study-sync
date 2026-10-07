@@ -41,7 +41,7 @@ export default async function CourseWorkspacePage({
   const session = await getServerSession();
 
   if (!session?.user?.id) {
-    redirect(`/auth/sign-in?redirectTo=/courses/${slug}`);
+    redirect(`/auth/sign-in?redirectTo=${encodeURIComponent(`/courses/${slug}`)}`);
   }
 
   const course = await getCourseByIdOrSlug(slug, session.user.id);
