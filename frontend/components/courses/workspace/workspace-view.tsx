@@ -20,16 +20,26 @@ import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceStats } from "./workspace-stats";
 import { DocumentList } from "./document-list";
 import { PdfUploadDialog } from "./pdf-upload-dialog";
+import { CourseChatView } from "./chat/course-chat-view";
+import { useSearchParams } from "next/navigation";
 import type { CourseWithStats } from "@/types/course";
 import type { DocumentItem } from "@/types/document";
+import type { ThreadListItem } from "@/data/chat";
 
 interface WorkspaceViewProps {
   course: CourseWithStats;
   documents: DocumentItem[];
+  initialThreads?: ThreadListItem[];
 }
 
-export function WorkspaceView({ course, documents }: WorkspaceViewProps) {
-  const [activeTab, setActiveTab] = useState<string>("overview");
+export function WorkspaceView({
+  course,
+  documents,
+  initialThreads = [],
+}: WorkspaceViewProps) {
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -205,57 +215,12 @@ export function WorkspaceView({ course, documents }: WorkspaceViewProps) {
         </TabsContent>
 
         {/* TAB 3: AI TUTOR */}
-        <TabsContent value="chat" className="space-y-6 mt-0 focus-visible:outline-none">
-          <div className="rounded-2xl border border-border/70 bg-card/40 p-6 sm:p-8 text-center space-y-4">
-            <div className="flex size-14 mx-auto items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 ring-8 ring-amber-500/5">
-              <Sparkles className="size-7" />
-            </div>
-
-            <div className="space-y-1.5 max-w-md mx-auto">
-              <h3 className="text-lg font-bold tracking-tight text-foreground">
-                Study with AI Tutor
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Your AI study companion reads and understands your course PDFs. Ask questions, clarify tough concepts, or request step-by-step problem derivations.
-              </p>
-            </div>
-
-            {documents.length === 0 ? (
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground mb-3">
-                  Upload at least one document to ground the AI in your specific syllabus.
-                </p>
-                <PdfUploadDialog
-                  courseId={course.id}
-                  courseSlug={course.slug}
-                  courseTitle={course.title}
-                />
-              </div>
-            ) : (
-              <div className="pt-2 flex flex-col items-center gap-3">
-                <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-500 text-xs">
-                  Connected to {documents.length} course {documents.length === 1 ? "document" : "documents"}
-                </Badge>
-                <div className="max-w-md w-full space-y-2 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Try asking:
-                  </p>
-                  {[
-                    "What are the highest-yield topics from these slides?",
-                    "Explain the core theorem with a simple analogy",
-                    "Generate 3 sample short-answer test questions",
-                  ].map((prompt, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-border/60 bg-muted/40 p-3 text-xs text-foreground cursor-pointer hover:border-border hover:bg-muted/70 transition-colors"
-                    >
-                      &ldquo;{prompt}&rdquo;
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+        <TabsContent value="chat" className="mt-0 focus-visible:outline-none">
+          <CourseChatView
+            course={course}
+            documents={documents}
+            initialThreads={initialThreads}
+          />
         </TabsContent>
 
         {/* TAB 4: FLASHCARDS */}

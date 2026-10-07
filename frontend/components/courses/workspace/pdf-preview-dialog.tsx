@@ -23,17 +23,20 @@ interface PdfPreviewDialogProps {
   document: DocumentItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialPage?: number;
 }
 
 export function PdfPreviewDialog({
   document,
   open,
   onOpenChange,
+  initialPage,
 }: PdfPreviewDialogProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   if (!document) return null;
 
+  const pageParam = initialPage ? `#page=${initialPage}&toolbar=1&navpanes=0` : `#toolbar=1&navpanes=0`;
   const previewUrl = `/api/documents/${document.id}/preview`;
   const downloadUrl = `/api/documents/${document.id}/preview?download=1`;
 
@@ -64,6 +67,14 @@ export function PdfPreviewDialog({
                       {document.pageCount === 1 ? "page" : "pages"}
                     </span>
                   </>
+                )}
+                {initialPage && (
+                  <Badge
+                    variant="outline"
+                    className="ml-1 h-5 px-1.5 text-[10px] border-primary/30 bg-primary/10 text-primary font-medium"
+                  >
+                    Page {initialPage}
+                  </Badge>
                 )}
                 <Badge
                   variant="outline"
@@ -125,7 +136,7 @@ export function PdfPreviewDialog({
           )}
 
           <iframe
-            src={`${previewUrl}#toolbar=1&navpanes=0`}
+            src={`${previewUrl}${pageParam}`}
             title={`Preview of ${document.title}`}
             className="w-full h-full border-none"
             onLoad={() => setIsLoading(false)}

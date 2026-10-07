@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "@/lib/get-session";
 import { getCourseByIdOrSlug } from "@/data/courses";
 import { getDocumentsForCourse } from "@/data/documents";
+import { getThreadsForCourse } from "@/data/chat";
 import { WorkspaceView } from "@/components/courses/workspace/workspace-view";
 import { WorkspaceTitleSync } from "@/components/courses/workspace-context";
 import type { Metadata } from "next";
@@ -49,12 +50,19 @@ export default async function CourseWorkspacePage({
     notFound();
   }
 
-  const documents = await getDocumentsForCourse(course.id, session.user.id);
+  const [documents, initialThreads] = await Promise.all([
+    getDocumentsForCourse(course.id, session.user.id),
+    getThreadsForCourse(course.id, session.user.id),
+  ]);
 
   return (
     <>
       <WorkspaceTitleSync title={course.title} />
-      <WorkspaceView course={course} documents={documents} />
+      <WorkspaceView
+        course={course}
+        documents={documents}
+        initialThreads={initialThreads}
+      />
     </>
   );
 }
